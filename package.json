@@ -1,0 +1,19 @@
+{
+  "name": "pi-nft-provenance",
+  "version": "0.1.0",
+  "description": "Read-only NFT provenance verifier for Pi Network (Soroban). Measures facts from RPC; no DB, no writes.",
+  "type": "module",
+  "main": "verify.mjs",
+  "bin": {
+    "pi-nft-provenance": "./verify.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "verify": "node verify.mjs"
+  },
+  "keywords": ["pi", "soroban", "nft", "provenance", "verifier", "read-only"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
