@@ -116,6 +116,18 @@ node --test test.mjs
 - `--fixture` replays a saved transaction and prints the same record offline
 - a JSON array fixture and a missing fixture file both exit `2`
 
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [`docs/INDEX.md`](docs/INDEX.md) | everything, in reading order, with the claim status of each figure |
+| [`docs/BOUNDARIES.md`](docs/BOUNDARIES.md) | every non-claim, in full |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | the design choices and the measurement behind each |
+| [`docs/SOURCES.md`](docs/SOURCES.md) | the endpoint, the date, and how to re-measure |
+| [`docs/VERIFICATION.md`](docs/VERIFICATION.md) | how to reproduce the tests and the live run |
+| [`llms.txt`](llms.txt) | a compact summary for machine readers |
+
 ## See also
 
 - `pi-soroban-events` — walk contract events with measured truncation

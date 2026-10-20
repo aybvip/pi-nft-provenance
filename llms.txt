@@ -1,0 +1,66 @@
+# Pi NFT Provenance Verifier — llms.txt
+# A read-only, zero-dependency verifier that answers: what happened in this
+# transaction, on which ledger, and when — from Pi's public API.
+
+> A transaction hash proves a transaction exists; it does NOT name a person, a
+> venue, or an NFT's creator. This tool prints only what the API returned.
+> contractId, tokenId and minter stay null unless a Soroban event supplied them.
+
+## What it is
+- read-only, zero-dependency, Node (ESM), Node >= 18
+- verify.mjs: the CLI (--tx --network --fixture --rpc)
+- extract.mjs: ScVal extraction (json + legacy shapes)
+- rest.mjs: Horizon REST access
+- test.mjs: 29 offline checks (node --test)
+- never writes; no database; no API keys
+
+## Source of truth
+- Mainnet REST:      https://api.mainnet.minepi.com   (Horizon 28.0.1, Pi Network, protocol 28, history from ledger 2)
+- Testnet REST:      https://api.testnet.minepi.com   (pi-horizon 28.0.1, Pi Testnet)
+- Testnet Soroban:   https://rpc.testnet.minepi.com   (JSON-RPC, protocol 28, 7-day retention)
+- Mainnet Soroban:   rpc.mainnet.minepi.com and soroban-rpc.mainnet.minepi.com -> HTTP 503
+There is therefore NO public Soroban RPC on Mainnet. The REST API is the portable
+source for transaction data; the testnet Soroban RPC is available via --rpc.
+
+## Why REST and not Soroban RPC
+Measured 2026-10-19: Mainnet REST works, Testnet REST works, Testnet Soroban
+works, both Mainnet Soroban hosts answer HTTP 503 (certificate expired
+2023-05-30).
+
+## Output shape
+# Transaction: hash, ledger, created_at, successful, source, fee_charged,
+operations, memo. # Ledger: sequence, closed_at, protocol, total_coins.
+# Operations: [n] {type, from, to, amount, asset_type}. A JSON provenance record
+is printed at the end for machine use.
+
+## Soroban events (--rpc), two measured constraints
+- getEvents rejects filter.type = "transaction" ("if set, type must be either
+  'system' or 'contract'"), so the tool fetches the ledger range unfiltered and
+  matches txHash client-side.
+- endLedger is EXCLUSIVE: [L, L] returns nothing, [L, L+1] returns ledger L. The
+  tool sends L + 1.
+If the response hits 100 events, a truncation warning is printed rather than
+pretending it saw everything.
+
+## Usage
+- node verify.mjs --tx <hash>                                  (mainnet default)
+- node verify.mjs --tx <hash> --network testnet
+- node verify.mjs --fixture tx.json                            (no network)
+- node verify.mjs --tx <hash> --network testnet --rpc https://rpc.testnet.minepi.com
+- node --test test.mjs
+Exit codes: 0 ok; 1 bad input (e.g. non-hex --tx, --tx + --fixture); 2 fixture
+problems (missing file, JSON array fixture).
+
+## Not claimed
+- that a transaction hash identifies a PERSON (the API records accounts, never
+  names; attribution is external)
+- that source_account is the NFT creator (a mint may be submitted by a relayer or
+  marketplace)
+- that contractId / tokenId / minter are known from REST alone (they are null
+  unless a Soroban event supplied them; null means "not read", not "absent"; under
+  --rpc the raw topicJson/valueJson are printed and NO field is labelled tokenId
+  or minter)
+- that the transaction is the first mint of a token (this reads one transaction,
+  not a token's full history)
+- that operations/effects are complete for every tx type
+- that Pi Network has adopted, reviewed or endorsed this
