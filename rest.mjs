@@ -97,10 +97,12 @@ export function provenanceFrom({ tx, ledger, operations = [], effects = [] }) {
     ledger: l,
     operations: operations.map(opRecord),
     effects: effects.map(effectRecord),
-    // Fields that require Soroban events; null here means "not read", not "absent".
+    // Fields that require interpreting a contract's event schema; null here
+    // means "not inferred", not "absent". The raw topics/value are printed by
+    // verify.mjs --rpc so the caller can interpret them.
     contractId: null,
     tokenId: null,
     minter: null,
-    note: "contractId/tokenId/minter require Soroban events; use --rpc on a network that exposes a Soroban RPC.",
+    note: "contractId/tokenId/minter are not inferred here; --rpc prints raw topics/value.",
   };
 }

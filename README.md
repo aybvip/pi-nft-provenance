@@ -91,7 +91,7 @@ pretending it saw everything.
 |---|---|
 | That a transaction hash identifies a person | The API records accounts, never names. Attribution is external. |
 | That `source_account` is the NFT creator | A mint may be submitted by a relayer or marketplace. |
-| That `contractId` / `tokenId` / `minter` are known from REST alone | They are `null` unless a Soroban event supplied them; `null` means "not read", not "absent". |
+| That `contractId` / `tokenId` / `minter` are known from REST alone | They are `null` unless a Soroban event supplied them; `null` means "not read", not "absent". Under `--rpc`, the **raw** `topicJson` and `valueJson` arrays are printed and **no field is labelled** `tokenId` or `minter`, because a contract's event schema is not knowable here. |
 | That the transaction is the first mint of a token | This tool reads one transaction, not a token's full history. |
 | That operations/effects are complete for every tx type | The tool prints what the API returned for that endpoint. |
 
@@ -101,14 +101,17 @@ pretending it saw everything.
 node --test test.mjs
 ```
 
-26 checks, **all offline**:
+29 checks, **all offline**:
 
 - `txRecord` / `ledgerRecord` / `opRecord` / `effectRecord` map real measured
   field shapes and return `null` for fields that were absent
 - `recordsOf` accepts both a bare array and Horizon `_embedded.records`
 - `provenanceFrom` leaves `contractId` / `tokenId` / `minter` as `null`
 - the REST bases are the measured hosts
-- Soroban ScVal extraction returns `null` for unknown shapes instead of guessing
+- ScVal extraction handles the **json** shapes the RPC actually returns
+  (`{ symbol }`, `{ i128: "100000" }`, `{ address }`, `{ map: [...] }`) and the
+  older `{ sym }` / `{ str }` / `{ obj: { entries } }` shapes
+- unknown ScVal shapes return `null` instead of guessing
 - `--tx` + `--fixture` is rejected; a non-hex `--tx` exits `1` before any network
 - `--fixture` replays a saved transaction and prints the same record offline
 - a JSON array fixture and a missing fixture file both exit `2`

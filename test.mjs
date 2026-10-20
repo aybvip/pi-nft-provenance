@@ -146,6 +146,16 @@ test("i128 token id returns its low word", () => {
   assert.equal(extractTokenIdFromScVal({ i128: { lo: "42", hi: "0" } }), "42");
 });
 
+test("json-format i128 (decimal string) is returned as-is", () => {
+  assert.equal(extractTokenIdFromScVal({ i128: "100000" }), "100000");
+  assert.equal(extractTokenIdFromScVal({ u128: "7" }), "7");
+});
+
+test("json-format symbol and string are returned", () => {
+  assert.equal(extractTokenIdFromScVal({ symbol: "mint" }), "mint");
+  assert.equal(extractTokenIdFromScVal({ string: "abc" }), "abc");
+});
+
 test("unknown ScVal shapes return null", () => {
   assert.equal(extractTokenIdFromScVal({}), null);
   assert.equal(extractTokenIdFromScVal({ bytes: "00" }), null);
@@ -155,14 +165,21 @@ test("a direct address is extracted", () => {
   assert.equal(extractAccount({ address: "GABC" }), "GABC");
 });
 
+test("an address inside a json-format map is extracted", () => {
+  const v = { map: [{ key: { symbol: "to" }, val: { address: "GMAP" } }] };
+  assert.equal(extractAccount(v), "GMAP");
+});
+
 test("an address inside obj.entries is extracted", () => {
   assert.equal(extractAccount({ obj: { entries: [{ val: { address: "GXYZ" } }] } }), "GXYZ");
 });
 
-test("event names come from sym, str, or a vec", () => {
+test("event names come from symbol, sym, string, str, or a vec", () => {
+  assert.equal(extractEventName({ symbol: "fee" }), "fee");
   assert.equal(extractEventName({ sym: "mint" }), "mint");
+  assert.equal(extractEventName({ string: "transfer" }), "transfer");
   assert.equal(extractEventName({ str: "transfer" }), "transfer");
-  assert.equal(extractEventName({ vec: [{ sym: "nft" }, { sym: "mint" }] }), "nft.mint");
+  assert.equal(extractEventName({ vec: [{ symbol: "nft" }, { symbol: "mint" }] }), "nft.mint");
 });
 
 test("mint-like detection is case-insensitive", () => {

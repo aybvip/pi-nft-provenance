@@ -18,7 +18,7 @@
 import { parseArgs } from "node:util";
 import { readFile } from "node:fs/promises";
 import { REST_BASE, provenanceFrom, recordsOf, txRecord, ledgerRecord } from "./rest.mjs";
-import { extractTokenIdFromScVal, extractAccount, extractEventName, isMintLike } from "./extract.mjs";
+import { extractEventName, isMintLike } from "./extract.mjs";
 
 function usage() {
   console.log(
@@ -199,27 +199,33 @@ function printLedger(l) {
       // MEASURED: filter type "transaction" is rejected ("if set, type must be
       // either 'system' or 'contract'"), so the range is fetched unfiltered and
       // the transaction hash is matched client-side. endLedger is exclusive.
+      // xdrFormat: "json" makes the RPC return topicJson/valueJson as decoded
+      // ScVal objects instead of base64 XDR strings.
       const ev = await sorobanRpc(values.rpc, "getEvents", {
         startLedger: t.ledger,
         endLedger: Number(t.ledger) + 1,
         filters: [],
         limit: maxEvents,
+        xdrFormat: "json",
       });
       const all = ev.events ?? [];
       const events = all.filter((e) => e.txHash === t.hash);
       console.log(`  ledger ${t.ledger} returned ${all.length} event(s); ${events.length} match this tx`);
-      if (all.length >= maxEvents) {
+      if (all.length >= 100) {
         console.log(`  WARNING: the response hit the 100-event page cap; events may be truncated.`);
       }
       eventCount = events.length;
       for (const [i, e] of events.entries()) {
-        const name = extractEventName(e.topic?.[0]);
+        const topics = e.topicJson ?? [];
+        const name = extractEventName(topics[0]);
         const contractId = e.contractId ?? null;
-        const tokenId = e.topic?.[1] ? extractTokenIdFromScVal(e.topic[1]) : null;
-        const account = extractAccount(e.value ?? e.data);
+        // Print the raw measured topic/value arrays. A contract's event schema
+        // is not knowable here, so no field is labelled "tokenId" or "minter".
         console.log(
-          `  [${i}] name=${name ?? "unknown"} contract=${contractId ?? "-"} tokenId=${tokenId ?? "-"} account=${account ?? "-"}`
+          `  [${i}] name=${name ?? "unknown"} contract=${contractId ?? "-"}`
         );
+        console.log(`       topics=${JSON.stringify(topics)}`);
+        console.log(`       value=${JSON.stringify(e.valueJson ?? null)}`);
         if (isMintLike(name)) mintLike = true;
       }
       if (events.length === 0) {
